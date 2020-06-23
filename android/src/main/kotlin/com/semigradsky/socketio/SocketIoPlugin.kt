@@ -36,7 +36,10 @@ class SocketIoPlugin private constructor(
             val uri = call.argument<String>("uri") as String
             val instanceId = UUID.randomUUID().toString()
             SocketIoPlugin(registrar, instanceId, uri)
-            result.success(instanceId)
+            
+            runOnUiThread(() -> {
+              result.success(instanceId)
+            });
           }
           else -> result.notImplemented()
         }
@@ -57,34 +60,46 @@ class SocketIoPlugin private constructor(
       when (call.method) {
         "connect" -> {
           connect()
-          result.success(null)
+          runOnUiThread(() -> {
+            result.success(null)
+          });
         }
         "on" -> {
           val event = call.argument<String>("event") as String
           val listenerId = on(event)
-          result.success(listenerId)
+          runOnUiThread(() -> {
+            result.success(listenerId)
+          });
         }
         "off" -> {
           val event = call.argument<String>("event") as String
           val listenerId = call.argument<ListenerId>("listenerId") as ListenerId
           off(event, listenerId)
-          result.success(null)
+          runOnUiThread(() -> {
+            result.success(null)
+          });
         }
         "emit" -> {
           val event = call.argument<String>("event") as String
           val arguments = call.argument<List<Any>>("arguments") as List<Any>
           emit(event, arguments)
-          result.success(null)
+          runOnUiThread(() -> {
+            result.success(null)
+          });
         }
         "isConnected" -> {
           val isConnected = socket.connected()
-          result.success(isConnected)
+          runOnUiThread(() -> {
+            result.success(isConnected)
+          });
         }
         "id" -> {
           val id = socket.id()
-          result.success(id)
+          runOnUiThread(() -> {
+            result.success(id)
+          });
         }
-        else -> result.notImplemented()
+        else -> runOnUiThread(() -> { result.notImplemented() });
       }
     })
   }
@@ -106,10 +121,12 @@ class SocketIoPlugin private constructor(
           else -> return@map argument
         }
       }
-      methodChannel.invokeMethod("handleData", mapOf(
-        "event" to event,
-        "arguments" to arguments
-      ))
+      runOnUiThread(() -> {
+        methodChannel.invokeMethod("handleData", mapOf(
+          "event" to event,
+          "arguments" to arguments
+        ))
+      });
     })
     listeners[listenerId] = listener
     socket.on(event, listener)
