@@ -22,6 +22,9 @@ class SocketIoPlugin private constructor(
   uri: String
 ) {
   companion object {
+    
+    private Handler uiThreadHandler = new Handler(Looper.getMainLooper());
+    
     private const val CHANNEL_NAME = "semigradsky.com/socket.io"
 
     @JvmStatic
@@ -37,9 +40,9 @@ class SocketIoPlugin private constructor(
             val instanceId = UUID.randomUUID().toString()
             SocketIoPlugin(registrar, instanceId, uri)
             
-            runOnUiThread(() -> {
+            uiThreadHandler.post(() ->
               result.success(instanceId)
-            })
+            )
           }
           else -> result.notImplemented()
         }
@@ -60,38 +63,38 @@ class SocketIoPlugin private constructor(
       when (call.method) {
         "connect" -> {
           connect()
-          runOnUiThread(() -> {
+          uiThreadHandler.post(() ->
             result.success(null)
-          })
+          )
         }
         "on" -> {
           val event = call.argument<String>("event") as String
           val listenerId = on(event)
-          runOnUiThread(() -> {
+          uiThreadHandler.post(() ->
             result.success(listenerId)
-          })
+          )
         }
         "off" -> {
           val event = call.argument<String>("event") as String
           val listenerId = call.argument<ListenerId>("listenerId") as ListenerId
           off(event, listenerId)
-          runOnUiThread(() -> {
+          uiThreadHandler.post(() ->
             result.success(null)
-          })
+          )
         }
         "emit" -> {
           val event = call.argument<String>("event") as String
           val arguments = call.argument<List<Any>>("arguments") as List<Any>
           emit(event, arguments)
-          runOnUiThread(() -> {
+          uiThreadHandler.post(() ->
             result.success(null)
-          })
+          )
         }
         "isConnected" -> {
           val isConnected = socket.connected()
-          runOnUiThread(() -> {
+          uiThreadHandler.post(() ->
             result.success(isConnected)
-          })
+          )
         }
         "id" -> {
           val id = socket.id()
@@ -99,7 +102,7 @@ class SocketIoPlugin private constructor(
             result.success(id)
           })
         }
-        else -> runOnUiThread(() -> { result.notImplemented() })
+        else -> uiThreadHandler.post(() -> result.notImplemented() )
       }
     })
   }
@@ -121,12 +124,12 @@ class SocketIoPlugin private constructor(
           else -> return@map argument
         }
       }
-      runOnUiThread(() -> {
+      uiThreadHandler.post(() ->
         methodChannel.invokeMethod("handleData", mapOf(
           "event" to event,
           "arguments" to arguments
         ))
-      })
+      )
     })
     listeners[listenerId] = listener
     socket.on(event, listener)
