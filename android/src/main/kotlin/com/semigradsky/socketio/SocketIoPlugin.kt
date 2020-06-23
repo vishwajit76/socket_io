@@ -39,7 +39,7 @@ class SocketIoPlugin private constructor(
             
             runOnUiThread(() -> {
               result.success(instanceId)
-            });
+            })
           }
           else -> result.notImplemented()
         }
@@ -62,14 +62,14 @@ class SocketIoPlugin private constructor(
           connect()
           runOnUiThread(() -> {
             result.success(null)
-          });
+          })
         }
         "on" -> {
           val event = call.argument<String>("event") as String
           val listenerId = on(event)
           runOnUiThread(() -> {
             result.success(listenerId)
-          });
+          })
         }
         "off" -> {
           val event = call.argument<String>("event") as String
@@ -77,7 +77,7 @@ class SocketIoPlugin private constructor(
           off(event, listenerId)
           runOnUiThread(() -> {
             result.success(null)
-          });
+          })
         }
         "emit" -> {
           val event = call.argument<String>("event") as String
@@ -85,21 +85,21 @@ class SocketIoPlugin private constructor(
           emit(event, arguments)
           runOnUiThread(() -> {
             result.success(null)
-          });
+          })
         }
         "isConnected" -> {
           val isConnected = socket.connected()
           runOnUiThread(() -> {
             result.success(isConnected)
-          });
+          })
         }
         "id" -> {
           val id = socket.id()
           runOnUiThread(() -> {
             result.success(id)
-          });
+          })
         }
-        else -> runOnUiThread(() -> { result.notImplemented() });
+        else -> runOnUiThread(() -> { result.notImplemented() })
       }
     })
   }
@@ -126,7 +126,7 @@ class SocketIoPlugin private constructor(
           "event" to event,
           "arguments" to arguments
         ))
-      });
+      })
     })
     listeners[listenerId] = listener
     socket.on(event, listener)
