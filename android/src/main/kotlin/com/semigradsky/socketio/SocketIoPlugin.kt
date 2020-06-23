@@ -39,11 +39,19 @@ class SocketIoPlugin private constructor(
             val instanceId = UUID.randomUUID().toString()
             SocketIoPlugin(registrar, instanceId, uri)
             
-            Handler(Looper.getMainLooper()).post {
+           doAsync {
+             uiThread {
               result.success(instanceId)
             }
+           }
+            
           }
-          else -> Handler(Looper.getMainLooper()).post {result.notImplemented()}
+          else -> 
+          doAsync {
+             uiThread {
+               result.notImplemented()
+             }
+          }
         }
       }
     }
@@ -62,34 +70,63 @@ class SocketIoPlugin private constructor(
       when (call.method) {
         "connect" -> {
           connect()
-          Handler(Looper.getMainLooper()).post {result.success(null)}
+          doAsync {
+             uiThread {
+               result.success(null)
+             }
+          }
         }
         "on" -> {
           val event = call.argument<String>("event") as String
           val listenerId = on(event)
-          Handler(Looper.getMainLooper()).post {result.success(listenerId)}
+          doAsync {
+             uiThread {
+               result.success(listenerId)
+             }
+          }
         }
         "off" -> {
           val event = call.argument<String>("event") as String
           val listenerId = call.argument<ListenerId>("listenerId") as ListenerId
           off(event, listenerId)
-          Handler(Looper.getMainLooper()).post {result.success(null)}
+          doAsync {
+             uiThread {
+               result.success(null)
+             }
+          }
         }
         "emit" -> {
           val event = call.argument<String>("event") as String
           val arguments = call.argument<List<Any>>("arguments") as List<Any>
           emit(event, arguments)
-          Handler(Looper.getMainLooper()).post {result.success(null)}
+          doAsync {
+             uiThread {
+               result.success(null)
+             }
+          }
         }
         "isConnected" -> {
           val isConnected = socket.connected()
-          Handler(Looper.getMainLooper()).post {result.success(isConnected)}
+          doAsync {
+             uiThread {
+               result.success(isConnected)
+             }
+          }
         }
         "id" -> {
           val id = socket.id()
-          Handler(Looper.getMainLooper()).post {result.success(id)}
+          doAsync {
+             uiThread {
+               result.success(id)
+             }
+          }
         }
-        else -> Handler(Looper.getMainLooper()).post {result.notImplemented()}
+        else -> 
+        doAsync {
+             uiThread {
+               result.notImplemented()
+             }
+        }
       }
     })
   }
