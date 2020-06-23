@@ -24,11 +24,9 @@ class SocketIoPlugin private constructor(
   companion object {
     private const val CHANNEL_NAME = "semigradsky.com/socket.io"
 
-    @UiThread
     @JvmStatic
     private val logger = Logger.getLogger("Socket.IO Plugin")
 
-    @UiThread
     @JvmStatic
     fun registerWith(registrar: Registrar) {
       val channel = MethodChannel(registrar.messenger(), CHANNEL_NAME)
@@ -38,15 +36,14 @@ class SocketIoPlugin private constructor(
             val uri = call.argument<String>("uri") as String
             val instanceId = UUID.randomUUID().toString()
             SocketIoPlugin(registrar, instanceId, uri)
-            result.success(instanceId)
+            runOnUiThread { result.success(instanceId)}
           }
-          else -> result.notImplemented()
+          else -> runOnUiThread { result.notImplemented()}
         }
       }
     }
   }
 
-  @UiThread
   private val methodChannel: MethodChannel = MethodChannel(
     registrar.messenger(),
     "$CHANNEL_NAME/$instanceId"
@@ -55,50 +52,47 @@ class SocketIoPlugin private constructor(
   private val socket: Socket = IO.socket(uri)
   private val listeners = mutableMapOf<ListenerId, Emitter.Listener>()
 
-  @UiThread
   init {
     methodChannel.setMethodCallHandler({ call: MethodCall, result: Result ->
       when (call.method) {
         "connect" -> {
           connect()
-          result.success(null)
+          runOnUiThread { result.success(null)}
         }
         "on" -> {
           val event = call.argument<String>("event") as String
           val listenerId = on(event)
-          result.success(listenerId)
+          runOnUiThread { result.success(listenerId)}
         }
         "off" -> {
           val event = call.argument<String>("event") as String
           val listenerId = call.argument<ListenerId>("listenerId") as ListenerId
           off(event, listenerId)
-          result.success(null)
+          runOnUiThread { result.success(null)}
         }
         "emit" -> {
           val event = call.argument<String>("event") as String
           val arguments = call.argument<List<Any>>("arguments") as List<Any>
           emit(event, arguments)
-          result.success(null)
+          runOnUiThread { result.success(null)}
         }
         "isConnected" -> {
           val isConnected = socket.connected()
-          result.success(isConnected)
+          runOnUiThread { result.success(isConnected)}
         }
         "id" -> {
           val id = socket.id()
-          result.success(id)
+          runOnUiThread { result.success(id)}
         }
-        else -> result.notImplemented()
+        else -> runOnUiThread { result.notImplemented()}
       }
     })
   }
 
-  @UiThread
   private fun connect() {
     socket.connect()
   }
 
-  @UiThread
   private fun on(event: String): ListenerId {
     val listenerId = UUID.randomUUID().toString()
     val listener = Emitter.Listener({ it ->
@@ -122,14 +116,12 @@ class SocketIoPlugin private constructor(
     return listenerId
   }
 
-  @UiThread
   private fun off(event: String, listenerId: ListenerId) {
     val listener = listeners[listenerId]
     socket.off(event, listener)
     listeners.remove(listenerId)
   }
 
-  @UiThread
   private fun emit(event: String, rawArguments: List<Any>) {
     val arguments = rawArguments.map { argument ->
       when (argument) {
