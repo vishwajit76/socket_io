@@ -12,6 +12,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.*
 import java.util.logging.Logger
+import android.os.Handler
 
 typealias InstanceId = String
 typealias ListenerId = String
@@ -36,9 +37,12 @@ class SocketIoPlugin private constructor(
             val uri = call.argument<String>("uri") as String
             val instanceId = UUID.randomUUID().toString()
             SocketIoPlugin(registrar, instanceId, uri)
-            runOnUiThread { result.success(instanceId)}
+            
+            Handler(Looper.getMainLooper()).post {
+              result.success(instanceId)
+            }
           }
-          else -> runOnUiThread { result.notImplemented()}
+          else -> Handler(Looper.getMainLooper()).post {result.notImplemented()}
         }
       }
     }
@@ -57,34 +61,34 @@ class SocketIoPlugin private constructor(
       when (call.method) {
         "connect" -> {
           connect()
-          runOnUiThread { result.success(null)}
+          Handler(Looper.getMainLooper()).post {result.success(null)}
         }
         "on" -> {
           val event = call.argument<String>("event") as String
           val listenerId = on(event)
-          runOnUiThread { result.success(listenerId)}
+          Handler(Looper.getMainLooper()).post {result.success(listenerId)}
         }
         "off" -> {
           val event = call.argument<String>("event") as String
           val listenerId = call.argument<ListenerId>("listenerId") as ListenerId
           off(event, listenerId)
-          runOnUiThread { result.success(null)}
+          Handler(Looper.getMainLooper()).post {result.success(null)}
         }
         "emit" -> {
           val event = call.argument<String>("event") as String
           val arguments = call.argument<List<Any>>("arguments") as List<Any>
           emit(event, arguments)
-          runOnUiThread { result.success(null)}
+          Handler(Looper.getMainLooper()).post {result.success(null)}
         }
         "isConnected" -> {
           val isConnected = socket.connected()
-          runOnUiThread { result.success(isConnected)}
+          Handler(Looper.getMainLooper()).post {result.success(isConnected)}
         }
         "id" -> {
           val id = socket.id()
-          runOnUiThread { result.success(id)}
+          Handler(Looper.getMainLooper()).post {result.success(id)}
         }
-        else -> runOnUiThread { result.notImplemented()}
+        else -> Handler(Looper.getMainLooper()).post {result.notImplemented()}
       }
     })
   }
